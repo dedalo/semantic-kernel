@@ -1,6 +1,6 @@
 export const Constants = {
     app: {
-        name: 'SK Chatbot',
+        name: 'AI_SK-TEST',
         updateCheckIntervalSeconds: 60 * 5,
     },
     msal: {
@@ -18,7 +18,7 @@ export const Constants = {
     bot: {
         profile: {
             id: 'bot',
-            fullName: 'SK Chatbot',
+            fullName: 'Copilot',
             emailAddress: '',
             photo: '/assets/bot-icon-1.png',
         },
@@ -26,7 +26,7 @@ export const Constants = {
         typingIndicatorTimeoutMs: 5000,
     },
     debug: {
-        root: 'sk-chatbot',
+        root: 'Copilot',
     },
     sk: {
         service: {
