@@ -49,31 +49,33 @@ and these components are functional:
             you may change `"UseHttp": false,` to `True` to overide the default
             use of https.
 
-          * Under the `“CompletionConfig”` block, make the following configuration
+         * Under the `“Completion”` block, make the following configuration
             changes to match your instance:
-
             * `“AIService”: “AzureOpenAI”`, or whichever option is appropriate for
               your instance.
             * `“DeploymentOrModelID”: “text-davinci-003”,` or whichever option is
               appropriate for your instance.  
             * `“Endpoint”:` “Your Azure Endpoint address, i.e. `http://contoso.openai.azure.com`”.
               If you are using OpenAI, leave this blank.
-            * You will insert your Azure endpoint key during build of the backend
-              API Server
+            * Set your Azure endpoint key using the following command: dotnet user-secrets set "Completion:Key" "MY_COMPLETION_KEY"
 
-        * Under the `“EmbeddingConfig”` block, make sure the following configuration
+        * Under the `“Embedding”` block, make sure the following configuration
           changes to match your instance:
             * `“AIService”: “AzureOpenAI”,` or whichever option is appropriate
               for your instance.
             * `“DeploymentOrModelID”: “text-embedding-ada-002”,` or whichever
               option is appropriate for your instance.    
-            * You will insert your Azure endpoint key during build of the backend
-              API Server
+            * Set your Azure endpoint key using the following command: dotnet user-secrets set "Embedding:Key" "MY_EMBEDDING_KEY"
+
+         * If you are using speech-to-text as input option then under the `AzureSpeech` block, make sure the following configuration matches your instance:
+            * `"Region": "westus2",` or whichever region is appropriate
+              for your speech sdk instance.
+            * Set your azure speech key using the following command: dotnet user-secrets set "AzureSpeech:Key" "MY_AZURE_SPEECH_KEY"
             
 4. Build the back-end API server by following these instructions:
     1. In the terminal navigate to  `\samples\apps\copilot-chat-app\webapi`
-    2. Run the command: `dotnet user-secrets set "CompletionConfig:Key"  "YOUR OPENAI KEY or AZURE OPENAI KEY"`
-    3. Run the command: `dotnet user-secrets set "EmbeddingConfig:Key" "YOUR OPENAI KEY or AZURE OPENAI KEY"`
+    2. Run the command: `dotnet user-secrets set "Completion:Key"  "YOUR OPENAI KEY or AZURE OPENAI KEY"`
+    3. Run the command: `dotnet user-secrets set "Embedding:Key" "YOUR OPENAI KEY or AZURE OPENAI KEY"`
     4. Execute the command `dotnet build`
     5. Once the build is complete, Execute the command `dotnet run`
     6. Test the back-end server to confirm it is running.
@@ -88,6 +90,7 @@ and these components are functional:
 >Note: You may need to acknowledge the Windows Defender Firewall, and allow
  the app to communicate over private or public netowrks as appropriate.
 
+ 
 5. Now that the back-end API server is setup, and confirmed operating, let’s
    proceed with setting up the front-end WebApp.
     1. Navigate to `\apps\copilot-chat-app\webapp`
