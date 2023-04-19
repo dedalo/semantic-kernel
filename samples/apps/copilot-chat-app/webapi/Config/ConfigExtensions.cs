@@ -52,8 +52,9 @@ internal static class ConfigExtensions
                 break;
 
             case AIServiceConfig.OpenAI:
-                kernelConfig.AddOpenAITextCompletionService(serviceConfig.Label, serviceConfig.DeploymentOrModelId,
+                kernelConfig.AddOpenAIChatCompletionService(serviceConfig.Label, serviceConfig.DeploymentOrModelId,
                     serviceConfig.Key);
+                //kernelConfig.AddOpenAITextCompletionService(serviceConfig.Label, serviceConfig.DeploymentOrModelId,serviceConfig.Key);
                 break;
 
             default:
