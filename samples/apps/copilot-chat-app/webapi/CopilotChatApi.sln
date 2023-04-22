@@ -5,12 +5,6 @@ VisualStudioVersion = 17.5.33530.505
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CopilotChatApi", "CopilotChatApi.csproj", "{C5145E32-D9AD-4F76-BB67-E3B294A244D3}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Skills.MsGraph", "..\..\..\..\dotnet\src\SemanticKernel.Skills\Skills.MsGraph\Skills.MsGraph.csproj", "{573B8C9A-35A7-4BF0-9EE5-3BB5D49F09AF}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Skills.Document", "..\..\..\..\dotnet\src\SemanticKernel.Skills\Skills.Document\Skills.Document.csproj", "{166209D0-C105-470C-B9F9-9762BE7751DB}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Skills.Web", "..\..\..\..\dotnet\src\SemanticKernel.Skills\Skills.Web\Skills.Web.csproj", "{5B658CEA-1906-439C-AFF9-D069F26F2B79}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SemanticKernel", "..\..\..\..\dotnet\src\SemanticKernel\SemanticKernel.csproj", "{B8240669-CCF7-4521-8E66-E5CE3E5EE8E9}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Connectors.AI.OpenAI", "..\..\..\..\dotnet\src\Connectors\Connectors.AI.OpenAI\Connectors.AI.OpenAI.csproj", "{B77CAABB-169E-418B-AA24-C7CE7951543C}"
@@ -25,18 +19,6 @@ Global
 		{C5145E32-D9AD-4F76-BB67-E3B294A244D3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C5145E32-D9AD-4F76-BB67-E3B294A244D3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C5145E32-D9AD-4F76-BB67-E3B294A244D3}.Release|Any CPU.Build.0 = Release|Any CPU
-		{573B8C9A-35A7-4BF0-9EE5-3BB5D49F09AF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{573B8C9A-35A7-4BF0-9EE5-3BB5D49F09AF}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{573B8C9A-35A7-4BF0-9EE5-3BB5D49F09AF}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{573B8C9A-35A7-4BF0-9EE5-3BB5D49F09AF}.Release|Any CPU.Build.0 = Release|Any CPU
-		{166209D0-C105-470C-B9F9-9762BE7751DB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{166209D0-C105-470C-B9F9-9762BE7751DB}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{166209D0-C105-470C-B9F9-9762BE7751DB}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{166209D0-C105-470C-B9F9-9762BE7751DB}.Release|Any CPU.Build.0 = Release|Any CPU
-		{5B658CEA-1906-439C-AFF9-D069F26F2B79}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5B658CEA-1906-439C-AFF9-D069F26F2B79}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{5B658CEA-1906-439C-AFF9-D069F26F2B79}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5B658CEA-1906-439C-AFF9-D069F26F2B79}.Release|Any CPU.Build.0 = Release|Any CPU
 		{B8240669-CCF7-4521-8E66-E5CE3E5EE8E9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{B8240669-CCF7-4521-8E66-E5CE3E5EE8E9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B8240669-CCF7-4521-8E66-E5CE3E5EE8E9}.Release|Any CPU.ActiveCfg = Release|Any CPU

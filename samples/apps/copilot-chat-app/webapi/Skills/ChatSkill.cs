@@ -313,19 +313,17 @@ public class ChatSkill
 
             var plannerkernel = KernelBuilder.Create();
             //var planner = plannerkernel.ImportSkill(new PlannerSkill(this._kernel, 1024), "planning");
-            var planner = new sequential
+            PlannerConfig plannerconfig = new PlannerConfig();
+            var planner = new SequentialPlanner(plannerkernel,plannerconfig);
 
             plannerkernel.ImportSkill(new TelecomFacturaSkill(plannerkernel, this._chatMessageRepository, this._chatSessionRepository, this._promptSettings));
-            var plannercontext = new ContextVariables(userIntent);
-            plannercontext.Set(PlannerSkill.Parameters.ExcludedSkills, "");
-            plannercontext.Set(PlannerSkill.Parameters.ExcludedFunctions, "LookupWord");
-            var originalPlan = await plannerkernel.RunAsync(
-            plannercontext,
-            planner["CreatePlan"]);
+            var planobject = await planner.CreatePlanAsync(userIntent);
 
-            context.Log.LogTrace($"RESULTADO DEL PLAN: {originalPlan.Result}");
+            context.Log.LogTrace($"RESULTADO DEL PLAN: {planobject.ToJson()}");
 
-             
+            var result = await plannerkernel.RunAsync(planobject);
+
+            context.Log.LogTrace($"RESULTADO DE LA EJECUCION: {result.Result}");
         }
         catch (Exception e)
         {
