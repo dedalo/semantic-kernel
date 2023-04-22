@@ -1,12 +1,15 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System.Globalization;
+using System.Numerics;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.AI.TextCompletion;
+using Microsoft.SemanticKernel.CoreSkills;
 using Microsoft.SemanticKernel.Memory;
 using Microsoft.SemanticKernel.Orchestration;
 using Microsoft.SemanticKernel.SkillDefinition;
 using SemanticKernel.Service.Storage;
+using Microsoft.SemanticKernel.Planning.Planners;
 
 namespace SemanticKernel.Service.Skills;
 
@@ -91,6 +94,7 @@ public class ChatSkill
             context.Fail(result.LastErrorDescription, result.LastException);
             return string.Empty;
         }
+        context.Log.LogTrace($"User intent: {result}");
 
         return $"User intent: {result}";
     }
@@ -244,11 +248,18 @@ public class ChatSkill
         chatContext.Variables.Set("audience", userName);
 
         // Extract user intent and update remaining token count
-        var userIntent = await this.ExtractUserIntentAsync(chatContext);
+        string userIntent = await this.ExtractUserIntentAsync(chatContext);
+
+        context.Log.LogTrace($"userIntent: {userIntent}");
+
+        await this.DoPlanAsync(userIntent, chatContext);
+
         if (chatContext.ErrorOccurred)
         {
             return chatContext;
         }
+
+        
 
         chatContext.Variables.Set("userIntent", userIntent);
         remainingToken -= this.EstimateTokenCount(userIntent);
@@ -286,6 +297,34 @@ public class ChatSkill
         context.Variables.Update(chatContext.Result);
         context.Variables.Set("userId", "Bot");
         return context;
+    }
+
+    private async Task DoPlanAsync(string userIntent, SKContext context)
+    {
+        // genero un plan sobre el chat
+        try
+        {
+
+            var plannerkernel = KernelBuilder.Create();
+            //var planner = plannerkernel.ImportSkill(new PlannerSkill(this._kernel, 1024), "planning");
+            var planner = new sequential
+
+            plannerkernel.ImportSkill(new TelecomFacturaSkill(plannerkernel, this._chatMessageRepository, this._chatSessionRepository, this._promptSettings));
+            var plannercontext = new ContextVariables(userIntent);
+            plannercontext.Set(PlannerSkill.Parameters.ExcludedSkills, "");
+            plannercontext.Set(PlannerSkill.Parameters.ExcludedFunctions, "LookupWord");
+            var originalPlan = await plannerkernel.RunAsync(
+            plannercontext,
+            planner["CreatePlan"]);
+
+            context.Log.LogTrace($"RESULTADO DEL PLAN: {originalPlan.Result}");
+
+             
+        }
+        catch (Exception e)
+        {
+            context.Log.LogError(e.Message, e);
+        }
     }
 
     #region Private

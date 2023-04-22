@@ -38,8 +38,16 @@ public class SpeechTokenController : ControllerBase
         string FetchTokenUri = "https://" + AzureSpeech.Region + "api.cognitive.microsoft.com/sts/v1.0/issueToken";
         string subscriptionKey = AzureSpeech.Key;
 
-        var token = this.FetchTokenAsync(FetchTokenUri, subscriptionKey).Result;
+        var token = "";
 
+        try
+        {
+            token = this.FetchTokenAsync(FetchTokenUri, subscriptionKey).Result;
+        }
+        catch (Exception ex)
+        {
+            token = null;
+        }
         return new SpeechTokenResponse { token = token, region = AzureSpeech.Region };
     }
 
