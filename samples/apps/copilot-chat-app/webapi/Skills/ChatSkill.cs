@@ -10,6 +10,7 @@ using Microsoft.SemanticKernel.Orchestration;
 using Microsoft.SemanticKernel.SkillDefinition;
 using SemanticKernel.Service.Storage;
 using Microsoft.SemanticKernel.Planning.Planners;
+using static Microsoft.SemanticKernel.AI.ChatCompletion.ChatHistory;
 
 namespace SemanticKernel.Service.Skills;
 
@@ -231,6 +232,14 @@ public class ChatSkill
         var userName = context["userName"];
         var chatId = context["chatId"];
 
+        // Clone the context to avoid modifying the original context variables.
+        var chatContext = Utils.CopyContextWithVariablesClone(context);
+        chatContext.Variables.Set("knowledgeCutoff", this._promptSettings.KnowledgeCutoffDate);
+        chatContext.Variables.Set("audience", userName);
+
+
+        await this.DoPlanAsync(message, chatContext);
+
         // TODO: check if user has access to the chat
 
         // Save this new message to memory such that subsequent chat responses can use it
@@ -245,17 +254,12 @@ public class ChatSkill
             return context;
         }
 
-        // Clone the context to avoid modifying the original context variables.
-        var chatContext = Utils.CopyContextWithVariablesClone(context);
-        chatContext.Variables.Set("knowledgeCutoff", this._promptSettings.KnowledgeCutoffDate);
-        chatContext.Variables.Set("audience", userName);
-
         // Extract user intent and update remaining token count
         string userIntent = await this.ExtractUserIntentAsync(chatContext);
 
         context.Log.LogTrace($"userIntent: {userIntent}");
 
-        await this.DoPlanAsync(userIntent, chatContext);
+        
 
         if (chatContext.ErrorOccurred)
         {
@@ -311,19 +315,40 @@ public class ChatSkill
         try
         {
 
-            var plannerkernel = KernelBuilder.Create();
+            var plannerkernel = new KernelBuilder().WithLogger(context.Log).WithConfiguration(this._kernel.Config).Build();
+            //plannerkernel.Config.AddOpenAITextCompletionService()
             //var planner = plannerkernel.ImportSkill(new PlannerSkill(this._kernel, 1024), "planning");
-            PlannerConfig plannerconfig = new PlannerConfig();
-            var planner = new SequentialPlanner(plannerkernel,plannerconfig);
+            //PlannerConfig plannerconfig = new PlannerConfig();
+            var planner = new SequentialPlanner(plannerkernel);
 
-            plannerkernel.ImportSkill(new TelecomFacturaSkill(plannerkernel, this._chatMessageRepository, this._chatSessionRepository, this._promptSettings));
+            plannerkernel.ImportSkill(new TelecomFacturaSkill());
             var planobject = await planner.CreatePlanAsync(userIntent);
 
             context.Log.LogTrace($"RESULTADO DEL PLAN: {planobject.ToJson()}");
+            
 
             var result = await plannerkernel.RunAsync(planobject);
 
             context.Log.LogTrace($"RESULTADO DE LA EJECUCION: {result.Result}");
+            var userId = context["userId"];
+            var userName = context["userName"];
+            var chatId = context["chatId"];
+
+            // TODO: check if user has access to the chat
+
+            // Save this new message to memory such that subsequent chat responses can use it
+            try
+            {
+                //await this._kernel.Memory.SaveInformationAsync("LongTermMemory",result.Result,chatId);
+                await context.Memory.SaveInformationAsync(SemanticMemoryExtractor.MemoryCollectionName(chatId, "LongTermMemory"), result.Result, chatId);
+                
+                //await this.SaveNewMessageAsync(result.Result, userId, userName, chatId);
+            }
+            catch (Exception ex) when (!ex.IsCriticalException())
+            {
+                context.Log.LogError("Unable to save new message: {0}", ex.Message);
+                context.Fail($"Unable to save new message: {ex.Message}", ex);
+            }
         }
         catch (Exception e)
         {
