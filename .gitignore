@@ -463,3 +463,4 @@ dist/
 # Peristant storage
 data/qdrant
 data/chatstore*
+/samples/apps/copilot-chat-app/webapi/appsettings.json
