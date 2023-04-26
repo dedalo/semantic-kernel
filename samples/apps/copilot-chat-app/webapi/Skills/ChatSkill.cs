@@ -11,6 +11,7 @@ using Microsoft.SemanticKernel.SkillDefinition;
 using SemanticKernel.Service.Storage;
 using Microsoft.SemanticKernel.Planning.Planners;
 using static Microsoft.SemanticKernel.AI.ChatCompletion.ChatHistory;
+using SemanticKernel.Service.Telecom;
 
 namespace SemanticKernel.Service.Skills;
 
@@ -316,39 +317,24 @@ public class ChatSkill
         {
 
             var plannerkernel = new KernelBuilder().WithLogger(context.Log).WithConfiguration(this._kernel.Config).Build();
-            //plannerkernel.Config.AddOpenAITextCompletionService()
-            //var planner = plannerkernel.ImportSkill(new PlannerSkill(this._kernel, 1024), "planning");
-            //PlannerConfig plannerconfig = new PlannerConfig();
             var planner = new SequentialPlanner(plannerkernel);
 
             plannerkernel.ImportSkill(new TelecomFacturaSkill());
+            plannerkernel.ImportSkill(new TelecomContactSkill());
             var planobject = await planner.CreatePlanAsync(userIntent);
-
-            context.Log.LogTrace($"RESULTADO DEL PLAN: {planobject.ToJson()}");
-            
-
-            var result = await plannerkernel.RunAsync(planobject);
-
-            context.Log.LogTrace($"RESULTADO DE LA EJECUCION: {result.Result}");
             var userId = context["userId"];
             var userName = context["userName"];
             var chatId = context["chatId"];
 
+            
+            // call planner using current context variables.
+            var result = await plannerkernel.RunAsync(context.Variables.Clone(),planobject);
+
+            
+
             // TODO: check if user has access to the chat
 
             // Save this new message to memory such that subsequent chat responses can use it
-            try
-            {
-                //await this._kernel.Memory.SaveInformationAsync("LongTermMemory",result.Result,chatId);
-                await context.Memory.SaveInformationAsync(SemanticMemoryExtractor.MemoryCollectionName(chatId, "LongTermMemory"), result.Result, chatId);
-                
-                //await this.SaveNewMessageAsync(result.Result, userId, userName, chatId);
-            }
-            catch (Exception ex) when (!ex.IsCriticalException())
-            {
-                context.Log.LogError("Unable to save new message: {0}", ex.Message);
-                context.Fail($"Unable to save new message: {ex.Message}", ex);
-            }
         }
         catch (Exception e)
         {
@@ -466,6 +452,13 @@ public class ChatSkill
         };
 
         return completionSettings;
+    }
+
+    [SKFunction("Get all telecom data from memory")]
+    [SKFunctionName("GetTelecomData")]
+    public string GetTelecomData(SKContext context)
+    {
+        return TelecomDataCollection.GetDataAsString(context["userId"]);
     }
 
     /// <summary>
