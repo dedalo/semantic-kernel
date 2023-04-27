@@ -12,7 +12,7 @@ using Microsoft.SemanticKernel.Planning;
 using Microsoft.SemanticKernel.SkillDefinition;
 using SemanticKernel.Service.Config;
 using SemanticKernel.Service.Storage;
-using Microsoft.SemanticKernel.Planning.Planners;
+using Microsoft.SemanticKernel.Planning.Sequential;
 using static Microsoft.SemanticKernel.AI.ChatCompletion.ChatHistory;
 using SemanticKernel.Service.Telecom;
 
@@ -302,12 +302,12 @@ public class ChatSkill
         var chatId = context["chatId"];
 
         // Clone the context to avoid modifying the original context variables.
-        var chatContext = Utils.CopyContextWithVariablesClone(context);
+        var chatContext = Utilities.CopyContextWithVariablesClone(context);
         chatContext.Variables.Set("knowledgeCutoff", this._promptSettings.KnowledgeCutoffDate);
         chatContext.Variables.Set("audience", userName);
 
 
-        await this.DoPlanAsync(message, chatContext);
+        //await this.DoPlanAsync(message, chatContext);
 
         // TODO: check if user has access to the chat
 
@@ -323,10 +323,7 @@ public class ChatSkill
             return context;
         }
 
-        // Clone the context to avoid modifying the original context variables.
-        var chatContext = Utilities.CopyContextWithVariablesClone(context);
-        chatContext.Variables.Set("knowledgeCutoff", this._promptSettings.KnowledgeCutoffDate);
-        chatContext.Variables.Set("audience", userName);
+        
         // Extract user intent and update remaining token count
         string userIntent = await this.ExtractUserIntentAsync(chatContext);
 
