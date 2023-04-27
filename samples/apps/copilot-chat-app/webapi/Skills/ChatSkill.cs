@@ -326,15 +326,9 @@ public class ChatSkill
             var userName = context["userName"];
             var chatId = context["chatId"];
 
-            
-            // call planner using current context variables.
+           // call planner using current context variables.
             var result = await plannerkernel.RunAsync(context.Variables.Clone(),planobject);
 
-            
-
-            // TODO: check if user has access to the chat
-
-            // Save this new message to memory such that subsequent chat responses can use it
         }
         catch (Exception e)
         {

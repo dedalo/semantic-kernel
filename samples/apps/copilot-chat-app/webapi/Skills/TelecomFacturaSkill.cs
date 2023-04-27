@@ -33,6 +33,7 @@ namespace SemanticKernel.Service.Skills
             //TODO
         }
 
+        [SKFunction("Descarga los datos desde el servicio rest")]
         public static async Task<string> DownloadDataAsync(string subscriptionId)
         {
             using var httpClient = new HttpClient();
@@ -46,6 +47,8 @@ namespace SemanticKernel.Service.Skills
         }
 
         [SKFunction("Devuelve la informacion de facturas del usuario logueado, incluyendo el monto o valor total y el saldo pendiente, tambien incluye la forma para amar un link de descarga y un link de pago. los montos estan expresados en ARS, y las fechas son GMT -3 usar un formato de fecha Latinoamericano al mostrar")]
+        [SKFunctionInput(Description = "El contrato para el que se necesitan las facturas")]
+        [SKFunctionContextParameter(Name = "userId", Description = "Unique and persistent identifier for the user")]
         public async Task<string> GetFacturasAsync(string input, SKContext context)
         {
             input = "99776418";
