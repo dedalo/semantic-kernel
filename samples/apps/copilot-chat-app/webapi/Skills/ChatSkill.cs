@@ -15,6 +15,7 @@ using SemanticKernel.Service.Storage;
 using Microsoft.SemanticKernel.Planning.Sequential;
 using static Microsoft.SemanticKernel.AI.ChatCompletion.ChatHistory;
 using SemanticKernel.Service.Telecom;
+using System.Numerics;
 
 namespace SemanticKernel.Service.Skills;
 
@@ -204,27 +205,49 @@ public class ChatSkill
             return string.Empty;
         }
 
+        
         // Skills run in the planner may modify the SKContext.
         // Clone the context to avoid modifying the original context variables.
         SKContext plannerContext = Utilities.CopyContextWithVariablesClone(context);
 
         // Use the user intent message as the input to the plan.
         plannerContext.Variables.Update(plannerContext["userIntent"]);
+        plannerContext.Variables.Update(plannerContext["userId"]);
 
         // Create a plan and run it.
+        /*
         Plan plan = await (await this._plannerFactoryAsync(this._kernel))
             .CreatePlanAsync(plannerContext.Variables.Input);
 
         SKContext planContext = await plan.InvokeAsync(context: plannerContext);
+        */
+
+        var plannerkernel = new KernelBuilder().WithLogger(context.Log).WithConfiguration(this._kernel.Config).Build();
+        var planner = new SequentialPlanner(plannerkernel);
+
+        plannerkernel.ImportSkill(new TelecomFacturaSkill());
+        plannerkernel.ImportSkill(new TelecomContactSkill());
+        var planobject = await planner.CreatePlanAsync(plannerContext["userIntent"]);
+        var userId = context["userId"];
+        var userName = context["userName"];
+        var chatId = context["chatId"];
+
+        // call planner using current context variables.
+        SKContext planContext = await planobject.InvokeAsync(context: plannerContext);
+        //await plannerkernel.RunAsync(context.Variables.Clone(), planobject);
+;
 
         // The result of the plan may be from an OpenAPI skill. Attempt to extract JSON from the response.
+        /*
         if (!this.TryExtractJsonFromPlanResult(planContext.Variables.Input, out string planResult))
         {
             // If not, use result of the plan execution result directly.
             planResult = planContext.Variables.Input;
         }
 
-        string informationText = $"[START RELATED INFORMATION]\n{planResult.Trim()}\n[END RELATED INFORMATION]\n";
+        var telecomdata = this.GetTelecomData(context);
+        */
+        string informationText = $"[START RELATED INFORMATION]\n{planContext.Result.Trim()}\n[END RELATED INFORMATION]\n";
 
         // Adjust the token limit using the number of tokens in the information text.
         int tokenLimit = int.Parse(context["tokenLimit"], new NumberFormatInfo());
@@ -305,9 +328,6 @@ public class ChatSkill
         var chatContext = Utilities.CopyContextWithVariablesClone(context);
         chatContext.Variables.Set("knowledgeCutoff", this._promptSettings.KnowledgeCutoffDate);
         chatContext.Variables.Set("audience", userName);
-
-
-        //await this.DoPlanAsync(message, chatContext);
 
         // TODO: check if user has access to the chat
 

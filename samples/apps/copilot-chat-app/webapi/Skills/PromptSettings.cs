@@ -129,7 +129,6 @@ public class PromptSettings
         "{{DocumentMemorySkill.QueryDocuments $INPUT}}",
         "{{ChatSkill.AcquireExternalInformation}}",
         "{{ChatSkill.ExtractChatHistory}}",
-        "ADITIONAL USER DATA:\n{{ChatSkill.GetTelecomData}}",
         this.SystemChatContinuationPrompt
     };
 
