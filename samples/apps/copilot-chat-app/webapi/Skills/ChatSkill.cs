@@ -5,17 +5,13 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.AI.TextCompletion;
-using Microsoft.SemanticKernel.CoreSkills;
+using Microsoft.SemanticKernel.Planning;
 using Microsoft.SemanticKernel.Memory;
 using Microsoft.SemanticKernel.Orchestration;
-using Microsoft.SemanticKernel.Planning;
 using Microsoft.SemanticKernel.SkillDefinition;
 using SemanticKernel.Service.Config;
 using SemanticKernel.Service.Storage;
-using Microsoft.SemanticKernel.Planning.Sequential;
-using static Microsoft.SemanticKernel.AI.ChatCompletion.ChatHistory;
 using SemanticKernel.Service.Telecom;
-using System.Numerics;
 
 namespace SemanticKernel.Service.Skills;
 
@@ -222,7 +218,7 @@ public class ChatSkill
         */
 
         var plannerkernel = new KernelBuilder().WithLogger(context.Log).WithConfiguration(this._kernel.Config).Build();
-        var planner = new SequentialPlanner(plannerkernel);
+        var planner = new ActionPlanner(plannerkernel);
 
         plannerkernel.ImportSkill(new TelecomFacturaSkill());
         plannerkernel.ImportSkill(new TelecomContactSkill());
