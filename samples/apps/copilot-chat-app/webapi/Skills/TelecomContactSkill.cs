@@ -46,7 +46,7 @@ namespace SemanticKernel.Service.Skills
             return await response.Content.ReadAsStringAsync();
         }
 
-        [SKFunction("Devuelve la informacion de contactos de telecom disponibles para el usuario en formato json, usar esta informacion para contestar mensaje o pregunta sobre contactos, telefonos. No usar para resolver otros problemas que no sean exclusivamentes sobre personas de contacto. No mostrar la informacion en el formato recibido, usar formatos entendibles para un usuario en el contexto de un chat.")]
+        [SKFunction("Devuelve la informacion de contactos y telefonos de telecom disponibles para el usuario en formato json, usar esta informacion para contestar mensaje o pregunta sobre contactos, telefonos. No usar para resolver otros problemas que no sean exclusivamentes sobre personas de contacto. No mostrar la informacion en el formato recibido, usar formatos entendibles para un usuario en el contexto de un chat.")]
         public async Task<string> GetContactsAsync(string input, SKContext context)
         {
             string data = await DownloadContactDataAsync(this._cuic,this._token);
