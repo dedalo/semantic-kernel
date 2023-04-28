@@ -1,16 +1,16 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System.Globalization;
-using System.Numerics;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.AI.TextCompletion;
-using Microsoft.SemanticKernel.CoreSkills;
+using Microsoft.SemanticKernel.Planning;
 using Microsoft.SemanticKernel.Memory;
 using Microsoft.SemanticKernel.Orchestration;
 using Microsoft.SemanticKernel.SkillDefinition;
+using SemanticKernel.Service.Config;
 using SemanticKernel.Service.Storage;
-using Microsoft.SemanticKernel.Planning.Planners;
-using static Microsoft.SemanticKernel.AI.ChatCompletion.ChatHistory;
 using SemanticKernel.Service.Telecom;
 
 namespace SemanticKernel.Service.Skills;
@@ -21,6 +21,11 @@ namespace SemanticKernel.Service.Skills;
 /// </summary>
 public class ChatSkill
 {
+    /// <summary>
+    /// Logger
+    /// </summary>
+    private readonly ILogger _logger;
+
     /// <summary>
     /// A kernel instance to create a completion function since each invocation
     /// of the <see cref="ChatAsync"/> function will generate a new prompt dynamically.
@@ -38,9 +43,19 @@ public class ChatSkill
     private readonly ChatSessionRepository _chatSessionRepository;
 
     /// <summary>
-    /// Prompt settings.
+    /// Settings containing prompt texts.
     /// </summary>
     private readonly PromptSettings _promptSettings;
+
+    /// <summary>
+    /// CopilotChat's planner to gather additional information for the chat context.
+    /// </summary>
+    private readonly CopilotChatPlanner _planner;
+
+    /// <summary>
+    /// Options for the planner.
+    /// </summary>
+    private readonly PlannerOptions _plannerOptions;
 
     /// <summary>
     /// Create a new instance of <see cref="ChatSkill"/>.
@@ -49,12 +64,18 @@ public class ChatSkill
         IKernel kernel,
         ChatMessageRepository chatMessageRepository,
         ChatSessionRepository chatSessionRepository,
-        PromptSettings promptSettings)
+        PromptSettings promptSettings,
+        CopilotChatPlanner planner,
+        PlannerOptions plannerOptions,
+        ILogger logger)
     {
+        this._logger = logger;
         this._kernel = kernel;
         this._chatMessageRepository = chatMessageRepository;
         this._chatSessionRepository = chatSessionRepository;
         this._promptSettings = promptSettings;
+        this._planner = planner;
+        this._plannerOptions = plannerOptions;
     }
 
     /// <summary>
@@ -71,7 +92,7 @@ public class ChatSkill
         var historyTokenBudget =
             tokenLimit -
             this._promptSettings.ResponseTokenLimit -
-            Utils.TokenCount(string.Join("\n", new string[]
+            Utilities.TokenCount(string.Join("\n", new string[]
                 {
                     this._promptSettings.SystemDescriptionPrompt,
                     this._promptSettings.SystemIntentPrompt,
@@ -80,7 +101,7 @@ public class ChatSkill
             );
 
         // Clone the context to avoid modifying the original context variables.
-        var intentExtractionContext = Utils.CopyContextWithVariablesClone(context);
+        var intentExtractionContext = Utilities.CopyContextWithVariablesClone(context);
         intentExtractionContext.Variables.Set("tokenLimit", historyTokenBudget.ToString(new NumberFormatInfo()));
         intentExtractionContext.Variables.Set("knowledgeCutoff", this._promptSettings.KnowledgeCutoffDate);
 
@@ -127,7 +148,7 @@ public class ChatSkill
         var latestMessage = await this._chatMessageRepository.FindLastByChatIdAsync(chatId);
 
         // Search for relevant memories.
-        List<MemoryQueryResult> relevantMemories = new List<MemoryQueryResult>();
+        List<MemoryQueryResult> relevantMemories = new();
         foreach (var memoryName in this._promptSettings.MemoryMap.Keys)
         {
             var results = context.Memory.SearchAsync(
@@ -146,7 +167,7 @@ public class ChatSkill
         string memoryText = "";
         foreach (var memory in relevantMemories)
         {
-            var tokenCount = Utils.TokenCount(memory.Metadata.Text);
+            var tokenCount = Utilities.TokenCount(memory.Metadata.Text);
             if (remainingToken - tokenCount > 0)
             {
                 memoryText += $"\n[{memory.Metadata.Description}] {memory.Metadata.Text}";
@@ -160,10 +181,75 @@ public class ChatSkill
 
         // Update the token limit.
         memoryText = $"Past memories (format: [memory type] <label>: <details>):\n{memoryText.Trim()}";
-        tokenLimit -= Utils.TokenCount(memoryText);
+        tokenLimit -= Utilities.TokenCount(memoryText);
         context.Variables.Set("tokenLimit", tokenLimit.ToString(new NumberFormatInfo()));
 
         return memoryText;
+    }
+
+    /// <summary>
+    /// Extract relevant additional knowledge using a planner.
+    /// </summary>
+    [SKFunction("Acquire external information")]
+    [SKFunctionName("AcquireExternalInformation")]
+    [SKFunctionContextParameter(Name = "userIntent", Description = "The intent of the user.")]
+    [SKFunctionContextParameter(Name = "tokenLimit", Description = "Maximum number of tokens")]
+    public async Task<string> AcquireExternalInformationAsync(SKContext context)
+    {
+        if (!this._plannerOptions.Enabled)
+        {
+            return string.Empty;
+        }
+
+        // Skills run in the planner may modify the SKContext. Clone the context to avoid
+        // modifying the original context variables.
+        SKContext plannerContext = Utilities.CopyContextWithVariablesClone(context);
+
+        // Use the user intent message as the input to the plan.
+        plannerContext.Variables.Update(plannerContext["userIntent"]);
+        plannerContext.Variables.Update(plannerContext["userId"]);
+
+        // Create a plan and run it.
+        /*
+        Plan plan = await (await this._plannerFactoryAsync(this._kernel))
+            .CreatePlanAsync(plannerContext.Variables.Input);
+
+        SKContext planContext = await plan.InvokeAsync(context: plannerContext);
+        */
+
+        var plannerkernel = new KernelBuilder().WithLogger(context.Log).WithConfiguration(this._kernel.Config).Build();
+        var planner = new ActionPlanner(plannerkernel);
+
+        plannerkernel.ImportSkill(new TelecomFacturaSkill());
+        plannerkernel.ImportSkill(new TelecomContactSkill());
+        var planobject = await planner.CreatePlanAsync(plannerContext["userIntent"]);
+        var userId = context["userId"];
+        var userName = context["userName"];
+        var chatId = context["chatId"];
+
+        // call planner using current context variables.
+        SKContext planContext = await planobject.InvokeAsync(context: plannerContext);
+        //await plannerkernel.RunAsync(context.Variables.Clone(), planobject);
+;
+
+        // The result of the plan may be from an OpenAPI skill. Attempt to extract JSON from the response.
+        /*
+        if (!this.TryExtractJsonFromPlanResult(planContext.Variables.Input, out string planResult))
+        {
+            // If not, use result of the plan execution result directly.
+            planResult = planContext.Variables.Input;
+        }
+
+        var telecomdata = this.GetTelecomData(context);
+        */
+        string informationText = $"[START RELATED INFORMATION]\n{planContext.Result.Trim()}\n[END RELATED INFORMATION]\n";
+
+        // Adjust the token limit using the number of tokens in the information text.
+        int tokenLimit = int.Parse(context["tokenLimit"], new NumberFormatInfo());
+        tokenLimit -= Utilities.TokenCount(informationText);
+        context.Variables.Set("tokenLimit", tokenLimit.ToString(new NumberFormatInfo()));
+
+        return informationText;
     }
 
     /// <summary>
@@ -187,7 +273,7 @@ public class ChatSkill
         foreach (var chatMessage in sortedMessages)
         {
             var formattedMessage = chatMessage.ToFormattedString();
-            var tokenCount = Utils.TokenCount(formattedMessage);
+            var tokenCount = Utilities.TokenCount(formattedMessage);
             if (remainingToken - tokenCount > 0)
             {
                 historyText = $"{formattedMessage}\n{historyText}";
@@ -221,7 +307,7 @@ public class ChatSkill
         var remainingToken =
             tokenLimit -
             this._promptSettings.ResponseTokenLimit -
-            Utils.TokenCount(string.Join("\n", new string[]
+            Utilities.TokenCount(string.Join("\n", new string[]
                 {
                     this._promptSettings.SystemDescriptionPrompt,
                     this._promptSettings.SystemResponsePrompt,
@@ -234,12 +320,9 @@ public class ChatSkill
         var chatId = context["chatId"];
 
         // Clone the context to avoid modifying the original context variables.
-        var chatContext = Utils.CopyContextWithVariablesClone(context);
+        var chatContext = Utilities.CopyContextWithVariablesClone(context);
         chatContext.Variables.Set("knowledgeCutoff", this._promptSettings.KnowledgeCutoffDate);
         chatContext.Variables.Set("audience", userName);
-
-
-        await this.DoPlanAsync(message, chatContext);
 
         // TODO: check if user has access to the chat
 
@@ -255,6 +338,7 @@ public class ChatSkill
             return context;
         }
 
+        
         // Extract user intent and update remaining token count
         string userIntent = await this.ExtractUserIntentAsync(chatContext);
 
@@ -271,7 +355,7 @@ public class ChatSkill
 
         chatContext.Variables.Set("userIntent", userIntent);
         // Update remaining token count
-        remainingToken -= Utils.TokenCount(userIntent);
+        remainingToken -= Utilities.TokenCount(userIntent);
         chatContext.Variables.Set("contextTokenLimit", contextTokenLimit.ToString(new NumberFormatInfo()));
         chatContext.Variables.Set("tokenLimit", remainingToken.ToString(new NumberFormatInfo()));
 
@@ -285,6 +369,7 @@ public class ChatSkill
             settings: this.CreateChatResponseCompletionSettings()
         );
 
+        // If the completion function failed, return the context containing the error.
         if (chatContext.ErrorOccurred)
         {
             return chatContext;
@@ -337,6 +422,35 @@ public class ChatSkill
     }
 
     #region Private
+
+    /// <summary>
+    /// Try to extract json from the planner response as if it were from an OpenAPI skill.
+    /// </summary>
+    private bool TryExtractJsonFromPlanResult(string openApiSkillResponse, out string json)
+    {
+        try
+        {
+            JsonNode? jsonNode = JsonNode.Parse(openApiSkillResponse);
+            string contentType = jsonNode?["contentType"]?.ToString() ?? string.Empty;
+            if (contentType.StartsWith("application/json", StringComparison.InvariantCultureIgnoreCase))
+            {
+                var content = jsonNode?["content"]?.ToString() ?? string.Empty;
+                if (!string.IsNullOrWhiteSpace(content))
+                {
+                    json = content;
+                    return true;
+                }
+            }
+        }
+        catch (JsonException)
+        {
+            // Expected if not valid JSON.
+            this._logger.LogDebug("Unable to extract JSON from planner response. It is likely not JSON formatted.");
+        }
+
+        json = string.Empty;
+        return false;
+    }
 
     /// <summary>
     /// Save a new message to the chat history.

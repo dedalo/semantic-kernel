@@ -126,9 +126,9 @@ public class PromptSettings
         this.SystemResponsePrompt,
         "{{$userIntent}}",
         "{{ChatSkill.ExtractUserMemories}}",
-        "{{ChatSkill.ExtractChatHistory}}",
         "{{DocumentMemorySkill.QueryDocuments $INPUT}}",
-        "ADITIONAL USER DATA:\n{{ChatSkill.GetTelecomData}}",
+        "{{ChatSkill.AcquireExternalInformation}}",
+        "{{ChatSkill.ExtractChatHistory}}",
         this.SystemChatContinuationPrompt
     };
 

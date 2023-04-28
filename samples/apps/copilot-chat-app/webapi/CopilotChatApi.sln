@@ -9,6 +9,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SemanticKernel", "..\..\..\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Connectors.AI.OpenAI", "..\..\..\..\dotnet\src\Connectors\Connectors.AI.OpenAI\Connectors.AI.OpenAI.csproj", "{B77CAABB-169E-418B-AA24-C7CE7951543C}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Planning.SequentialPlanner", "..\..\..\..\dotnet\src\Extensions\Planning.SequentialPlanner\Planning.SequentialPlanner.csproj", "{6AD8A3A3-511E-405F-91E7-4F368B72EE8F}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Planning.ActionPlanner", "..\..\..\..\dotnet\src\Extensions\Planning.ActionPlanner\Planning.ActionPlanner.csproj", "{D42DC4E9-ADB4-4D71-813C-30721B49FE2A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +31,14 @@ Global
 		{B77CAABB-169E-418B-AA24-C7CE7951543C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B77CAABB-169E-418B-AA24-C7CE7951543C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B77CAABB-169E-418B-AA24-C7CE7951543C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6AD8A3A3-511E-405F-91E7-4F368B72EE8F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6AD8A3A3-511E-405F-91E7-4F368B72EE8F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6AD8A3A3-511E-405F-91E7-4F368B72EE8F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6AD8A3A3-511E-405F-91E7-4F368B72EE8F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D42DC4E9-ADB4-4D71-813C-30721B49FE2A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D42DC4E9-ADB4-4D71-813C-30721B49FE2A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D42DC4E9-ADB4-4D71-813C-30721B49FE2A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D42DC4E9-ADB4-4D71-813C-30721B49FE2A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

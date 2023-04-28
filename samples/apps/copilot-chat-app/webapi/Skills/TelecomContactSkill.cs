@@ -46,18 +46,15 @@ namespace SemanticKernel.Service.Skills
             return await response.Content.ReadAsStringAsync();
         }
 
-        [SKFunction("Devuelve la informacion de contactos de telecom disponibles para el usuario en formato json, usar esta informacion para contestar mensaje o pregunta sobre contactos, telefonos. No usar para resolver otros problemas que no sean exclusivamentes sobre personas de contacto. No mostrar la informacion en el formato recibido, usar formatos entendibles para un usuario en el contexto de un chat.")]
-        [SKFunctionContextParameter(Name = "userId", Description = "Unique and persistent identifier for the user")]
-        [SKFunctionContextParameter(Name = "userName", Description = "Name of the user")]
-        [SKFunctionContextParameter(Name = "chatId", Description = "Unique and persistent identifier for the chat")]
+        [SKFunction("Devuelve la informacion de contactos y telefonos disponibles para el usuario, usar esta informacion para contestar mensaje o pregunta sobre contactos, telefonos, si quiere comunicarse telefonicamente o si quiere hablar con una persona.")]
         public async Task<string> GetContactsAsync(string input, SKContext context)
         {
             string data = await DownloadContactDataAsync(this._cuic,this._token);
-            string result = $@"Los contactos del usuario poseen la siguiente informacion en formato json, usar esta informacion para contestar cualquier mensaje o pregunta sobre contactos. No mostrar la informacion en el formato recibido, usar formatos entendibles para un usuario en el contexto de un chat.
+            string result = $@"Los contactos de la empresa disponibles para el usuario poseen la siguiente informacion en formato json, usar esta informacion para contestar cualquier mensaje o pregunta sobre contactos, telefonos, llamados. No mostrar la informacion en el formato recibido, usar formatos entendibles para un usuario en el contexto de un chat.
             {data}";
 
-            var userId = context["userId"];
-            TelecomDataCollection.AddData(userId, "TELECOM_FACTURAS", result);
+            //var userId = context["userId"];
+            //TelecomDataCollection.AddData(userId, "TELECOM_CONTACTOS", result);
 
             return result;
         }
