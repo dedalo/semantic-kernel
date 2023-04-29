@@ -338,9 +338,10 @@ public class ChatSkill
             return context;
         }
 
-        
+
         // Extract user intent and update remaining token count
         string userIntent = await this.ExtractUserIntentAsync(chatContext);
+        //string userIntent = chatContext.Result;
 
         context.Log.LogTrace($"userIntent: {userIntent}");
 
@@ -388,37 +389,11 @@ public class ChatSkill
         }
 
         // Extract semantic memory
-        await this.ExtractSemanticMemoryAsync(chatId, chatContext);
+        //await this.ExtractSemanticMemoryAsync(chatId, chatContext);
 
         context.Variables.Update(chatContext.Result);
         context.Variables.Set("userId", "Bot");
         return context;
-    }
-
-    private async Task DoPlanAsync(string userIntent, SKContext context)
-    {
-        // genero un plan sobre el chat
-        try
-        {
-
-            var plannerkernel = new KernelBuilder().WithLogger(context.Log).WithConfiguration(this._kernel.Config).Build();
-            var planner = new SequentialPlanner(plannerkernel);
-
-            plannerkernel.ImportSkill(new TelecomFacturaSkill());
-            plannerkernel.ImportSkill(new TelecomContactSkill());
-            var planobject = await planner.CreatePlanAsync(userIntent);
-            var userId = context["userId"];
-            var userName = context["userName"];
-            var chatId = context["chatId"];
-
-           // call planner using current context variables.
-            var result = await plannerkernel.RunAsync(context.Variables.Clone(),planobject);
-
-        }
-        catch (Exception e)
-        {
-            context.Log.LogError(e.Message, e);
-        }
     }
 
     #region Private

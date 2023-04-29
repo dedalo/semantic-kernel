@@ -109,6 +109,7 @@ public sealed class SKFunction : ISKFunction, IDisposable
             try
             {
                 string prompt = await functionConfig.PromptTemplate.RenderAsync(context).ConfigureAwait(false);
+                context.Log.LogInformation($"EL PROMPT ENVIADO ES\n{prompt}");
 
                 string completion = await client.CompleteAsync(prompt, requestSettings, context.CancellationToken).ConfigureAwait(false);
                 context.Variables.Update(completion);

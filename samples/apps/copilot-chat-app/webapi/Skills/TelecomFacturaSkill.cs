@@ -51,7 +51,7 @@ namespace SemanticKernel.Service.Skills
         {
             input = "99776418";
             string data = await DownloadDataAsync(input);
-            string result = $@"Las facturas del usuario poseen la siguiente informacion en formato json, usar esta informacion para contestar cualquier mensaje o pregunta sobre facturas o saldos, intentar responder preguntas abiertas con algo de informacion como una lista de facturas con fecha y monto, no pedir numeros de facturas o contratos u otros datos al cliente. el monto de la factura se indica en el campo adjustmentAmount y el saldo pendiente en balanceAmount.
+            string result = $@"Las facturas del usuario poseen la siguiente informacion en formato json, usar esta informacion para contestar cualquier mensaje o pregunta sobre facturas o saldos, Si la pregunta del usuario no es clara devolver la lista de facturas con fecha y monto, no pedir numeros de facturas o contratos u otros datos al cliente. el monto de la factura se indica en el campo adjustmentAmount y el saldo pendiente en balanceAmount.
             {data}";
 
             //var userId = context["userId"];
