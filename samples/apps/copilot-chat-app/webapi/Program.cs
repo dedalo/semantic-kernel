@@ -2,6 +2,9 @@
 
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.AspNet.SignalR.Hosting;
+using System.Linq;
 
 namespace SemanticKernel.Service;
 
@@ -21,7 +24,6 @@ public sealed class Program
 
         // Load in configuration settings from appsettings.json, user-secrets, key vaults, etc...
         builder.Host.AddConfiguration();
-        builder.WebHost.UseUrls(); // Disables endpoint override warning message when using IConfiguration for Kestrel endpoint.
 
         // Add in configuration options and Semantic Kernel services.
         builder.Services
@@ -37,15 +39,30 @@ public sealed class Program
             .AddAuthorization(builder.Configuration)
             .AddEndpointsApiExplorer()
             .AddSwaggerGen()
-            .AddCors()
+            .AddCors(options => // Configure the CORS policy
+            {
+                options.AddDefaultPolicy(builder =>
+                {
+                    builder
+                        .WithOrigins("http://localhost:5500")
+                        .AllowAnyHeader()
+                        .AllowAnyMethod()
+                        .AllowCredentials(); // Allow credentials
+                });
+            })
             .AddControllers();
+
+        builder.Services.AddSignalR();
+        builder.Services.AddDistributedMemoryCache();
 
         // Configure middleware and endpoints
         WebApplication app = builder.Build();
         app.UseCors();
         app.UseAuthentication();
         app.UseAuthorization();
+
         app.MapControllers();
+        app.MapHub<ChatHub>("/chatHub"); // Map the ChatHub to the /chatHub endpoint
 
         // Enable Swagger for development environments.
         if (app.Environment.IsDevelopment())
@@ -72,3 +89,4 @@ public sealed class Program
         await runTask;
     }
 }
+
