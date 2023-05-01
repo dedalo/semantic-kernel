@@ -58,9 +58,10 @@ public class ChatHistorySkill
     {
         var userId = context["userId"];
         var userName = context["userName"];
+        var chatId = context["chatId"];
 
         // Create a new chat.
-        var newChat = new ChatSession(userId, title);
+        var newChat = new ChatSession(userId, title,chatId);
         await this._chatSessionRepository.CreateAsync(newChat);
 
         // Create the initial bot message.

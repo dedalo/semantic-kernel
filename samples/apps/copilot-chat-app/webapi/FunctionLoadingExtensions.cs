@@ -45,7 +45,8 @@ internal static class FunctionLoadingExtensions
         CopilotChatPlanner planner,
         PlannerOptions plannerOptions,
         DocumentMemoryOptions documentMemoryOptions,
-        ILogger logger)
+        ILogger logger,
+        ChatHub? chatHub=null)
     {
         // Hardcode your native function registrations here
 
@@ -59,7 +60,8 @@ internal static class FunctionLoadingExtensions
             promptSettings: promptSettings,
             planner: planner,
             plannerOptions: plannerOptions,
-            logger: logger
+            logger: logger,
+            chatHub: chatHub
         );
         kernel.ImportSkill(chatSkill, nameof(ChatSkill));
 

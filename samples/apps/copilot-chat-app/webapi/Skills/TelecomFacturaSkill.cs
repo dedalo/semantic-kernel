@@ -47,6 +47,7 @@ namespace SemanticKernel.Service.Skills
         }
 
         [SKFunction("Devuelve la informacion de facturas del cliente, incluyendo el monto o valor total y el saldo pendiente, tambien incluye la forma para amar un link de descarga y un link de pago. los montos estan expresados en ARS, y las fechas son GMT -3 usar un formato de fecha Latinoamericano al mostrar")]
+        [SKFunctionContextParameter(Name = "token", Description = "telecom access token")]
         public async Task<string> GetFacturasAsync(string input, SKContext context)
         {
             input = "99776418";

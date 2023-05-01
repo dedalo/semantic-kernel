@@ -28,9 +28,9 @@ public class ChatSession : IStorageEntity
     [JsonPropertyName("title")]
     public string Title { get; set; }
 
-    public ChatSession(string userId, string title)
+    public ChatSession(string userId, string title, string chatId = "")
     {
-        this.Id = Guid.NewGuid().ToString();
+        this.Id = string.IsNullOrEmpty(chatId) ? Guid.NewGuid().ToString() : chatId;
         this.UserId = userId;
         this.Title = title;
     }

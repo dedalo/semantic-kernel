@@ -26,8 +26,6 @@ namespace SemanticKernel.Service.Skills
 
         private const string Domain = "https://gestiononline.telecom.com.ar";
         private const string ContactService = "/v2/api/data/getClienteContactosByToken";
-        private string _cuic = "01030500010912";
-        private string _token = "70b1541c-d13f-4c0d-a91c-1c6ebda14d55";
 
         public TelecomContactSkill()
         {
@@ -47,9 +45,13 @@ namespace SemanticKernel.Service.Skills
         }
 
         [SKFunction("Devuelve la informacion de contactos y telefonos disponibles para el usuario, usar esta informacion para contestar mensaje o pregunta sobre contactos, telefonos, si quiere comunicarse telefonicamente o si quiere hablar con una persona.")]
+        [SKFunctionContextParameter(Name = "token", Description = "token")]
+        [SKFunctionContextParameter(Name = "cuic", Description = "cuic")]
         public async Task<string> GetContactsAsync(string input, SKContext context)
         {
-            string data = await DownloadContactDataAsync(this._cuic,this._token);
+            string token = context["token"];
+            string cuic = context["cuic"];
+            string data = await DownloadContactDataAsync(cuic,token);
             string result = $@"Los contactos de la empresa disponibles para el usuario poseen la siguiente informacion en formato json, usar esta informacion para contestar cualquier mensaje o pregunta sobre contactos, telefonos, llamados. No mostrar la informacion en el formato recibido, usar formatos entendibles para un usuario en el contexto de un chat.
             {data}";
 

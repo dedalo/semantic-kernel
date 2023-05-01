@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNet.SignalR.Hosting;
 using System.Linq;
+using SemanticKernel.Service.Telecom;
+using System.Net.Http;
 
 namespace SemanticKernel.Service;
 
@@ -53,6 +55,8 @@ public sealed class Program
             .AddControllers();
 
         builder.Services.AddSignalR();
+        builder.Services.AddHttpClient();
+        builder.Services.AddSingleton<UserAccountService>();
         builder.Services.AddDistributedMemoryCache();
 
         // Configure middleware and endpoints

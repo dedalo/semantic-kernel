@@ -12,6 +12,7 @@ using Microsoft.SemanticKernel.SkillDefinition;
 using SemanticKernel.Service.Config;
 using SemanticKernel.Service.Storage;
 using SemanticKernel.Service.Telecom;
+using static SemanticKernel.Service.ChatHub;
 
 namespace SemanticKernel.Service.Skills;
 
@@ -57,6 +58,8 @@ public class ChatSkill
     /// </summary>
     private readonly PlannerOptions _plannerOptions;
 
+    private readonly ChatHub _chatHub;
+
     /// <summary>
     /// Create a new instance of <see cref="ChatSkill"/>.
     /// </summary>
@@ -67,7 +70,8 @@ public class ChatSkill
         PromptSettings promptSettings,
         CopilotChatPlanner planner,
         PlannerOptions plannerOptions,
-        ILogger logger)
+        ILogger logger,
+        ChatHub chatHub)
     {
         this._logger = logger;
         this._kernel = kernel;
@@ -76,6 +80,7 @@ public class ChatSkill
         this._promptSettings = promptSettings;
         this._planner = planner;
         this._plannerOptions = plannerOptions;
+        this._chatHub = chatHub;
     }
 
     /// <summary>
@@ -88,6 +93,8 @@ public class ChatSkill
     [SKFunctionContextParameter(Name = "audience", Description = "The audience the chat bot is interacting with.")]
     public async Task<string> ExtractUserIntentAsync(SKContext context)
     {
+        var chatId = context["chatId"];
+        await this._chatHub.SendStatusToGroup(chatId, "Analizando pregunta...", StatusType.Analyzing);
         var tokenLimit = this._promptSettings.CompletionTokenLimit;
         var historyTokenBudget =
             tokenLimit -
@@ -200,7 +207,8 @@ public class ChatSkill
         {
             return string.Empty;
         }
-
+        var chatId = context["chatId"];
+        await this._chatHub.SendStatusToGroup(chatId, "Buscando datos...", StatusType.Searching);
         // Skills run in the planner may modify the SKContext. Clone the context to avoid
         // modifying the original context variables.
         SKContext plannerContext = Utilities.CopyContextWithVariablesClone(context);
@@ -208,6 +216,8 @@ public class ChatSkill
         // Use the user intent message as the input to the plan.
         plannerContext.Variables.Update(plannerContext["userIntent"]);
         plannerContext.Variables.Update(plannerContext["userId"]);
+        plannerContext.Variables.Update(plannerContext["token"]);
+        plannerContext.Variables.Update(plannerContext["cuic"]);
 
         // Create a plan and run it.
         /*
@@ -218,19 +228,17 @@ public class ChatSkill
         */
 
         var plannerkernel = new KernelBuilder().WithLogger(context.Log).WithConfiguration(this._kernel.Config).Build();
-        var planner = new ActionPlanner(plannerkernel);
-
         plannerkernel.ImportSkill(new TelecomFacturaSkill());
         plannerkernel.ImportSkill(new TelecomContactSkill());
+        var planner = new ActionPlanner(plannerkernel);
+        
         var planobject = await planner.CreatePlanAsync(plannerContext["userIntent"]);
         var userId = context["userId"];
         var userName = context["userName"];
-        var chatId = context["chatId"];
 
         // call planner using current context variables.
         SKContext planContext = await planobject.InvokeAsync(context: plannerContext);
         //await plannerkernel.RunAsync(context.Variables.Clone(), planobject);
-;
 
         // The result of the plan may be from an OpenAPI skill. Attempt to extract JSON from the response.
         /*
@@ -318,11 +326,13 @@ public class ChatSkill
         var userId = context["userId"];
         var userName = context["userName"];
         var chatId = context["chatId"];
+        var token = context["token"];
 
         // Clone the context to avoid modifying the original context variables.
         var chatContext = Utilities.CopyContextWithVariablesClone(context);
         chatContext.Variables.Set("knowledgeCutoff", this._promptSettings.KnowledgeCutoffDate);
         chatContext.Variables.Set("audience", userName);
+        chatContext.Variables.Set("token", token);
 
         // TODO: check if user has access to the chat
 
@@ -345,14 +355,12 @@ public class ChatSkill
 
         context.Log.LogTrace($"userIntent: {userIntent}");
 
-        
+        this._chatHub.SendStatusToGroup(chatId, "Pensando", StatusType.Analyzing);
 
         if (chatContext.ErrorOccurred)
         {
             return chatContext;
         }
-
-        
 
         chatContext.Variables.Set("userIntent", userIntent);
         // Update remaining token count
@@ -369,6 +377,8 @@ public class ChatSkill
             context: chatContext,
             settings: this.CreateChatResponseCompletionSettings()
         );
+
+        this._chatHub.SendStatusToGroup(chatId, "Escribiendo...", StatusType.Writing);
 
         // If the completion function failed, return the context containing the error.
         if (chatContext.ErrorOccurred)
@@ -535,13 +545,6 @@ public class ChatSkill
         };
 
         return completionSettings;
-    }
-
-    [SKFunction("Get all telecom data from memory")]
-    [SKFunctionName("GetTelecomData")]
-    public string GetTelecomData(SKContext context)
-    {
-        return TelecomDataCollection.GetDataAsString(context["userId"]);
     }
 
     /// <summary>

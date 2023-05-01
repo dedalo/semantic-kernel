@@ -10,6 +10,7 @@ using Microsoft.SemanticKernel.Diagnostics;
 using Microsoft.SemanticKernel.Orchestration;
 using Microsoft.SemanticKernel.Planning.Action;
 using Microsoft.SemanticKernel.SkillDefinition;
+using System.Text.RegularExpressions;
 
 #pragma warning disable IDE0130
 // ReSharper disable once CheckNamespace - Using NS of Plan
@@ -63,6 +64,15 @@ public sealed class ActionPlanner
         this._context = kernel.CreateNewContext();
     }
 
+    private string RemoveBracketContent(string input)
+    {
+        string pattern = @"\[(.*?)\]";
+        string replacement = "\"\"";
+        string result = Regex.Replace(input, pattern, replacement);
+
+        return result;
+    }
+
     public async Task<Plan> CreatePlanAsync(string goal)
     {
         if (string.IsNullOrEmpty(goal))
@@ -73,6 +83,7 @@ public sealed class ActionPlanner
         SKContext result = await this._plannerFunction.InvokeAsync(goal, this._context).ConfigureAwait(false);
 
         var json = """{"plan":{ "rationale":""" + result;
+        json = this.RemoveBracketContent(json);
 
         // extract and parse JSON
         ActionPlanResponse? planData;
