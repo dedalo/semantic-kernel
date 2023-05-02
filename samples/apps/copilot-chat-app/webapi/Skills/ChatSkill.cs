@@ -207,55 +207,54 @@ public class ChatSkill
         {
             return string.Empty;
         }
-        var chatId = context["chatId"];
-        await this._chatHub.SendStatusToGroup(chatId, "Buscando datos...", StatusType.Searching);
-        // Skills run in the planner may modify the SKContext. Clone the context to avoid
-        // modifying the original context variables.
-        SKContext plannerContext = Utilities.CopyContextWithVariablesClone(context);
 
-        // Use the user intent message as the input to the plan.
-        plannerContext.Variables.Update(plannerContext["userIntent"]);
-        plannerContext.Variables.Update(plannerContext["userId"]);
-        plannerContext.Variables.Update(plannerContext["token"]);
-        plannerContext.Variables.Update(plannerContext["cuic"]);
-
-        // Create a plan and run it.
-        /*
-        Plan plan = await (await this._plannerFactoryAsync(this._kernel))
-            .CreatePlanAsync(plannerContext.Variables.Input);
-
-        SKContext planContext = await plan.InvokeAsync(context: plannerContext);
-        */
-
-        var plannerkernel = new KernelBuilder().WithLogger(context.Log).WithConfiguration(this._kernel.Config).Build();
-        plannerkernel.ImportSkill(new TelecomFacturaSkill());
-        plannerkernel.ImportSkill(new TelecomContactSkill());
-        var planner = new ActionPlanner(plannerkernel);
-        
-        var planobject = await planner.CreatePlanAsync(plannerContext["userIntent"]);
-        var userId = context["userId"];
-        var userName = context["userName"];
-
-        // call planner using current context variables.
-        SKContext planContext = await planobject.InvokeAsync(context: plannerContext);
-        //await plannerkernel.RunAsync(context.Variables.Clone(), planobject);
-
-        // The result of the plan may be from an OpenAPI skill. Attempt to extract JSON from the response.
-        /*
-        if (!this.TryExtractJsonFromPlanResult(planContext.Variables.Input, out string planResult))
+        string informationText = string.Empty;
+        try
         {
-            // If not, use result of the plan execution result directly.
-            planResult = planContext.Variables.Input;
+            var chatId = context["chatId"];
+            var userId = context["userId"];
+            var userName = context["userName"];
+            await this._chatHub.SendStatusToGroup(chatId, "Buscando datos...", StatusType.Searching);
+            // Skills run in the planner may modify the SKContext. Clone the context to avoid
+            // modifying the original context variables.
+            SKContext plannerContext = Utilities.CopyContextWithVariablesClone(context);
+
+            // Use the user intent message as the input to the plan.
+            plannerContext.Variables.Update(plannerContext["userIntent"]);
+            plannerContext.Variables.Update(plannerContext["userId"]);
+            plannerContext.Variables.Update(plannerContext["token"]);
+            plannerContext.Variables.Update(plannerContext["cuic"]);
+
+
+            var plannerkernel = new KernelBuilder().WithLogger(context.Log).WithConfiguration(this._kernel.Config).Build();
+            plannerkernel.ImportSkill(new TelecomFacturaSkill(this._chatHub));
+            plannerkernel.ImportSkill(new TelecomContactSkill(this._chatHub));
+            plannerkernel.ImportSkill(new TelecomContractSkill(this._chatHub));
+            var planner = new ActionPlanner(plannerkernel);
+
+            var planobject = await planner.CreatePlanAsync(plannerContext["userIntent"]);
+
+            this._kernel.Log.LogDebug($"PLANRESULT:\n{planobject.ToString()}");
+            // call planner using current context variables.
+
+            if(planobject.Steps.Count > 0)
+            {
+                SKContext planContext = await planobject.InvokeAsync(context: plannerContext);
+
+                informationText = $"[START RELATED INFORMATION]\n{planContext.Result.Trim()}\n[END RELATED INFORMATION]\n";
+            }
+            
+
+            // Adjust the token limit using the number of tokens in the information text.
+            int tokenLimit = int.Parse(context["tokenLimit"], new NumberFormatInfo());
+            tokenLimit -= Utilities.TokenCount(informationText);
+            context.Variables.Set("tokenLimit", tokenLimit.ToString(new NumberFormatInfo()));
         }
-
-        var telecomdata = this.GetTelecomData(context);
-        */
-        string informationText = $"[START RELATED INFORMATION]\n{planContext.Result.Trim()}\n[END RELATED INFORMATION]\n";
-
-        // Adjust the token limit using the number of tokens in the information text.
-        int tokenLimit = int.Parse(context["tokenLimit"], new NumberFormatInfo());
-        tokenLimit -= Utilities.TokenCount(informationText);
-        context.Variables.Set("tokenLimit", tokenLimit.ToString(new NumberFormatInfo()));
+        catch (Exception ex)
+        {
+            this._kernel.Log.LogError(ex.Message);
+        }
+        
 
         return informationText;
     }

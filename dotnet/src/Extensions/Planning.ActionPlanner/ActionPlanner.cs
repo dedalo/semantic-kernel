@@ -11,6 +11,9 @@ using Microsoft.SemanticKernel.Orchestration;
 using Microsoft.SemanticKernel.Planning.Action;
 using Microsoft.SemanticKernel.SkillDefinition;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
+
 
 #pragma warning disable IDE0130
 // ReSharper disable once CheckNamespace - Using NS of Plan
@@ -70,6 +73,25 @@ public sealed class ActionPlanner
         string replacement = "\"\"";
         string result = Regex.Replace(input, pattern, replacement);
 
+        try
+        {
+            // Intentar deserializar el JSON
+            var obj = System.Text.Json.JsonSerializer.Deserialize<ActionPlanResponse?>(result, new JsonSerializerOptions
+            {
+                AllowTrailingCommas = true,
+                DictionaryKeyPolicy = null,
+                DefaultIgnoreCondition = JsonIgnoreCondition.Never,
+                PropertyNameCaseInsensitive = true,
+            });
+
+        }
+        catch (JsonReaderException ex)
+        {
+            // Reemplazar todos los textos sin comillas con comillas
+            result = System.Text.RegularExpressions.Regex.Replace(result, @"(?<!\\)(')(.*?)\1", "\"$2\"");
+
+        }
+
         return result;
     }
 
@@ -85,11 +107,13 @@ public sealed class ActionPlanner
         var json = """{"plan":{ "rationale":""" + result;
         json = this.RemoveBracketContent(json);
 
+        this._kernel.Log.LogDebug($"ActionPlan:\n{json}");
+
         // extract and parse JSON
         ActionPlanResponse? planData;
         try
         {
-            planData = JsonSerializer.Deserialize<ActionPlanResponse?>(json, new JsonSerializerOptions
+            planData = System.Text.Json.JsonSerializer.Deserialize<ActionPlanResponse?>(json, new JsonSerializerOptions
             {
                 AllowTrailingCommas = true,
                 DictionaryKeyPolicy = null,

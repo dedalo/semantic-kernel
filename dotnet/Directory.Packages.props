@@ -33,7 +33,7 @@
     <PackageVersion Include="Microsoft.Identity.Client.Extensions.Msal" Version="2.29.0" />
     <PackageVersion Include="Microsoft.OpenApi" Version="[1.6.3, )" />
     <PackageVersion Include="Microsoft.OpenApi.Readers" Version="[1.6.3, )" />
-    <PackageVersion Include="Newtonsoft.Json" Version="[13.0.3, )" />
+    <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
     <!-- Symbols -->
     <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="1.1.1" />
     <!-- Analyzers -->

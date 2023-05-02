@@ -76,6 +76,12 @@ namespace SemanticKernel.Service
             await this.Clients.Group(groupName).SendAsync("ReceiveMessage", user, message);
         }
 
+        private async Task UpdateUserToGroup(string groupName, UserAccount userAccount)
+        {
+            await this.Clients.Group(groupName).SendAsync("UpdateUSer", userAccount.FirstName, userAccount.Name);
+        }
+
+
         private async Task SendMessageToClient(string clientId, string user, string message)
         {
             await this.Clients.Client(clientId).SendAsync("ReceiveMessage", user, message);
@@ -183,8 +189,10 @@ namespace SemanticKernel.Service
         private async Task SetUserFromTokenAsync(string token)
         {
             var userAccount = await this._userAccountService.GetUserAccountFromTokenAsync(token).ConfigureAwait(false);
+            var groupName = await this._cache.GetStringAsync(this.Context.ConnectionId);
             await this.SetUsernameAsync(userAccount.FirstName);
             await this.SetCuicAsync(userAccount.cuic);
+            await this.UpdateUserToGroup(groupName, userAccount);
         }
 
         public async Task SetUsernameAsync(string username)
